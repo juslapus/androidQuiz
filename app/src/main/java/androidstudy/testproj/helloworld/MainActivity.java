@@ -1,5 +1,6 @@
 package androidstudy.testproj.helloworld;
 
+import android.content.Intent;
 import android.media.Image;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -17,6 +18,7 @@ public class MainActivity extends AppCompatActivity {
     private static final String KEY_INDEX = "index";
     private Button mTrueButton;
     private Button mFalseButton;
+    private Button mCheatButton;
     private ImageView mNextButton;
     private ImageView mPreviousButton;
     private TextView mQuestion;
@@ -56,12 +58,24 @@ public class MainActivity extends AppCompatActivity {
                                                checkAnswer(true);
                                            }
                                        });
+
         mFalseButton = (Button) findViewById(R.id.false_button);
         mFalseButton.setOnClickListener(new View.OnClickListener() {
             ;
             @Override
             public void onClick(View v) {
                 checkAnswer(false);
+            }
+        });
+
+        mCheatButton = (Button) findViewById(R.id.cheat_button);
+        mCheatButton.setOnClickListener(new View.OnClickListener() {
+            ;
+            @Override
+            public void onClick(View v) {
+                // cheat it
+                Intent i = new Intent(MainActivity.this,CheatActivity.class);
+                startActivity(i);
             }
         });
 
