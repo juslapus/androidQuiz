@@ -1,5 +1,6 @@
 package androidstudy.testproj.helloworld;
 
+import android.app.Activity;
 import android.content.Intent;
 import android.media.Image;
 import android.support.v7.app.AppCompatActivity;
@@ -16,14 +17,17 @@ import java.util.Random;
 
 public class MainActivity extends AppCompatActivity {
     private static final String KEY_INDEX = "index";
+    private static final String CHEAT_CHECK = "cheat";
     private Button mTrueButton;
     private Button mFalseButton;
     private Button mCheatButton;
     private ImageView mNextButton;
     private ImageView mPreviousButton;
     private TextView mQuestion;
+    private boolean mIsCheater;
 
     private static final String TAG = "QuizActivity";
+    private static final int REQUEST_CODE_CHEAT = 0;
 
     private Question[] mQuestionBank = new Question[] {
             new Question(R.string.question_oceans, true),
@@ -32,6 +36,8 @@ public class MainActivity extends AppCompatActivity {
             new Question(R.string.question_americas, true),
             new Question(R.string.question_asia, true),
     };
+
+    private int[] score;
 
     private int mCurrentIndex = 0;
     private boolean mIsCorrect = false;
@@ -44,6 +50,7 @@ public class MainActivity extends AppCompatActivity {
 
         if (savedInstanceState != null) {
             mCurrentIndex = savedInstanceState.getInt(KEY_INDEX,0);
+            mIsCheater = savedInstanceState.getBoolean(CHEAT_CHECK, false);
         }
 
         mQuestion = (TextView) findViewById(R.id.question_textView);
@@ -74,8 +81,11 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 // cheat it
-                Intent i = new Intent(MainActivity.this,CheatActivity.class);
-                startActivity(i);
+                //Intent i = new Intent(MainActivity.this,CheatActivity.class);
+                boolean answerIsTrue = mQuestionBank[mCurrentIndex].isAnswerTrue();
+                Intent i = CheatActivity.newIntent(MainActivity.this,answerIsTrue);
+                //startActivity(i);
+                startActivityForResult(i, REQUEST_CODE_CHEAT);
             }
         });
 
@@ -96,13 +106,34 @@ public class MainActivity extends AppCompatActivity {
                 previousQuestion();
             }
         });
-}
+    }
+
+    private void initializeScoring() {
+        for (int i = 0; i < mQuestionBank.length; i++) {
+            score[mCurrentIndex] = 0;
+        }
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (resultCode != Activity.RESULT_OK) {
+            return;
+        }
+
+        if (requestCode == REQUEST_CODE_CHEAT) {
+            if (data == null) {
+                return;
+            }
+            mIsCheater = CheatActivity.wasAnswerShown(data);
+        }
+    }
 
     @Override
     public void onSaveInstanceState(Bundle savedInstanceState){
         super.onSaveInstanceState(savedInstanceState);
         Log.i(TAG, "onSaveInstanceState");
         savedInstanceState.putInt(KEY_INDEX, mCurrentIndex);
+        savedInstanceState.putBoolean(CHEAT_CHECK, mIsCheater);
     }
 
     @Override
@@ -136,6 +167,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void nextQuestion() {
+        mIsCheater = false;
         mCurrentIndex = (mCurrentIndex + 1) % mQuestionBank.length;
         refreshText();
     }
@@ -161,10 +193,14 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void fireToast() {
-        if (mIsCorrect) {
-            Toast.makeText(MainActivity.this, R.string.correct_toast, Toast.LENGTH_SHORT).show();
+        if (mIsCheater) {
+            Toast.makeText(MainActivity.this, R.string.judgement_toast, Toast.LENGTH_SHORT).show();
         } else {
-            Toast.makeText(MainActivity.this, R.string.incorrect_toast, Toast.LENGTH_SHORT).show();
+            if (mIsCorrect) {
+                Toast.makeText(MainActivity.this, R.string.correct_toast, Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(MainActivity.this, R.string.incorrect_toast, Toast.LENGTH_SHORT).show();
+            }
         }
     }
 }
